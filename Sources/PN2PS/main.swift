@@ -13,8 +13,15 @@ struct PN2PS: ParsableCommand {
     @Argument(help: "Your name in log")
     var heroname: String
 
+	@Flag(name: .long, help: "Cards are in emoji format")
+    private var emoji: Bool
+
 	func run() {
-		print("\(filename) \(heroname)")
+        let game = Game(filename: self.filename, useEmoji: self.emoji)
+    
+        for hand in game.hands {
+            hand.printPokerStarsDescription(heroName: self.heroname)
+        }
     }
 }
 
