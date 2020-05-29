@@ -13,15 +13,25 @@ struct PN2PS: ParsableCommand {
     @Argument(help: "Your name in log")
     var heroname: String
 
-	@Flag(name: .long, help: "Cards are in emoji format")
+	@Option(name: .shortAndLong, default: nil, help: "Limit amount of hands processed")
+    private var limit: Int?
+
+	@Flag(name: .shortAndLong, help: "Cards are in emoji format")
     private var emoji: Bool
 
 	func run() {
         let game = Game(filename: self.filename, useEmoji: self.emoji)
-    
-        for hand in game.hands {
-            hand.printPokerStarsDescription(heroName: self.heroname)
-        }
+    	
+    	if let limit = self.limit { 
+	        for hand in game.hands.prefix(limit) {
+	            hand.printPokerStarsDescription(heroName: self.heroname)
+	        }
+    	} else {
+	        for hand in game.hands {
+	            hand.printPokerStarsDescription(heroName: self.heroname)
+	        }    		
+    	}
+
     }
 }
 

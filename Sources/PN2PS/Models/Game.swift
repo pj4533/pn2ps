@@ -28,10 +28,10 @@ class Game: NSObject {
         do {
             let csvFile: CSV = try CSV(url: URL(fileURLWithPath: filename))
             var msgKey = "entry"
-            if csvFile.namedColumns.keys.contains("msg") ?? false {
+            if csvFile.namedColumns.keys.contains("msg") {
                 msgKey = "msg"
             }
-            for row in (csvFile.namedRows ?? []).reversed() {
+            for row in csvFile.namedRows.reversed() {
                 if row[msgKey]?.starts(with: "The player ") ?? false {
                     self.parsePlayerLine(msg: row[msgKey])
                 } else if row[msgKey]?.starts(with: "The admin ") ?? false {
@@ -44,7 +44,7 @@ class Game: NSObject {
         } catch let parseError as CSVParseError {
             print(parseError)
         } catch {
-            // Catch errors from trying to load files
+            print("Error loading file")
         }
     }
     
