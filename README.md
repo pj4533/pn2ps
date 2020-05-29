@@ -20,6 +20,8 @@ OPTIONS:
 
 `swift build` Builds app to the `.build` folder
 
+`swift build -c release` Build a release version
+
 `./.build/debug/pn2ps` Runs app after building
 
 `swift run pn2ps` Runs app directly
