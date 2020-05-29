@@ -26,6 +26,11 @@ OPTIONS:
 
 `swift package generate-xcodeproj` Generates an xcode project file
 
+
+### Known Issues
+
+See the Github issues section.  (PRs Accepted, lol)
+
 ### Example
 
 ```
