@@ -45,6 +45,7 @@ class Hand {
         var foundHoleCards = false
         var isFirstAction = false
         var uncalledBet = 0.0
+        var currentBet = 0.0
         var totalPotSize = 0.0
         var streetDescription = "before Flop"
         for line in self.lines {
@@ -125,6 +126,7 @@ class Hand {
             if line.contains("big blind") {
                 let bigBlindSize = (Double(line.components(separatedBy: "big blind of ").last ?? "0") ?? 0) / 100.0
                 uncalledBet = bigBlindSize
+                currentBet = bigBlindSize
                 for player in self.bigBlind {
                     previousAction[player.id ?? "error"] = bigBlindSize
                 }
@@ -155,10 +157,12 @@ class Hand {
                         if isFirstAction {
                             print("\(player.name ?? "unknown"): bets \(String(format: "$%.02f", raiseSize))")
                             uncalledBet = raiseSize
+                            currentBet = raiseSize
                             isFirstAction = false
                         } else {
-                            print("\(player.name ?? "unknown"): raises \(String(format: "$%.02f", raiseSize - uncalledBet)) to \(String(format: "$%.02f", raiseSize))")
-                            uncalledBet = raiseSize - uncalledBet
+                            print("\(player.name ?? "unknown"): raises \(String(format: "$%.02f", raiseSize - currentBet)) to \(String(format: "$%.02f", raiseSize))")
+                            uncalledBet = raiseSize - currentBet
+                            currentBet = raiseSize
                         }
                         previousAction[player.id ?? "error"] = raiseSize
                     }
@@ -172,6 +176,7 @@ class Hand {
                         if isFirstAction {
                             print("\(player.name ?? "unknown"): bets \(String(format: "$%.02f", callSize))")
                             uncalledBet = callSize
+                            currentBet = callSize
                             isFirstAction = false
                         } else {
                             let uncalledPortionOfBet = callSize - (previousAction[player.id ?? "error"] ?? 0.0)
@@ -254,6 +259,7 @@ class Hand {
                 print("*** FLOP *** [\(self.flop?.map({$0.rawValue}).joined(separator: " ") ?? "error")]")
                 isFirstAction = true
                 uncalledBet = 0
+                currentBet = 0
                 for player in self.players {
                     previousAction[player.id ?? "error"] = 0
                 }
@@ -264,6 +270,7 @@ class Hand {
                 print("*** TURN *** [\(self.flop?.map({$0.rawValue}).joined(separator: " ") ?? "error")] [\(self.turn?.rawValue ?? "error")]")
                 isFirstAction = true
                 uncalledBet = 0
+                currentBet = 0                
                 for player in self.players {
                     previousAction[player.id ?? "error"] = 0
                 }
@@ -274,6 +281,7 @@ class Hand {
                 print("*** RIVER *** [\(self.flop?.map({$0.rawValue}).joined(separator: " ") ?? "error") \(self.turn?.rawValue ?? "error")] [\(self.river?.rawValue ?? "error")]")
                 isFirstAction = true
                 uncalledBet = 0
+                currentBet = 0                
                 for player in self.players {
                     previousAction[player.id ?? "error"] = 0
                 }
