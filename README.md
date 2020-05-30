@@ -4,7 +4,7 @@ Convert PokerNow.club logs into PokerStars hand history format
 ```
 OVERVIEW: Convert PokerNow.club logs into PokerStars hand history format
 
-USAGE: pn2ps <filename> <heroname> [--limit <limit>] [--emoji]
+USAGE: pn2ps <filename> <heroname> [--limit <limit>] [--multiplier <multiplier>] [--emoji]
 
 ARGUMENTS:
   <filename>              PokerNow log filename
@@ -12,6 +12,8 @@ ARGUMENTS:
 
 OPTIONS:
   -l, --limit <limit>     Limit amount of hands processed
+  -m, --multiplier <multiplier>
+                          Multiply bet amounts by given value
   -e, --emoji             Cards are in emoji format
   -h, --help              Show help information.
 ```
