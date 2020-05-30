@@ -20,6 +20,8 @@ class Game: NSObject {
     var hands: [Hand] = []
     var currentHand: Hand?
 
+    var legacyDateFormat: Bool = false
+
     init(filename: String, useEmoji: Bool = false) {
         super.init()
         
@@ -28,8 +30,11 @@ class Game: NSObject {
         do {
             let csvFile: CSV = try CSV(url: URL(fileURLWithPath: filename))
             var msgKey = "entry"
+            var orderKey = "order"
             if csvFile.namedColumns.keys.contains("msg") {
+                self.legacyDateFormat = true
                 msgKey = "msg"
+                orderKey = "created_at"
             }
             for row in csvFile.namedRows.reversed() {
                 if row[msgKey]?.starts(with: "The player ") ?? false {
@@ -37,7 +42,7 @@ class Game: NSObject {
                 } else if row[msgKey]?.starts(with: "The admin ") ?? false {
                     self.parseAdminLine(msg: row[msgKey])
                 } else {
-                    self.parseHandLine(msg: row[msgKey], at: row["at"], order: row["order"])
+                    self.parseHandLine(msg: row[msgKey], at: row["at"], order: row[orderKey])
                 }
                 
             }
@@ -61,15 +66,29 @@ class Game: NSObject {
     private func parseHandLine(msg: String?, at: String?, order: String? ) {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        if self.legacyDateFormat {
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS+00"
+        } else {
+            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        }
         let date = formatter.date(from: at ?? "")
         
         if msg?.starts(with: "-- starting hand ") ?? false {
             self.resetSmallBlind()
 
+
             let startingHandComponents = msg?.components(separatedBy: " (dealer: \"")
             let handId = Int(order ?? "???") ?? 0//Int(startingHandComponents?.first?.replacingOccurrences(of: "-- starting hand #", with: "") ?? "0") ?? 0
-            let dealerNameIdArray = startingHandComponents?.last?.replacingOccurrences(of: "\") --", with: "").components(separatedBy: " @ ")
+
+            let unparsedDealer = startingHandComponents?.last?.replacingOccurrences(of: "\") --", with: "")
+            
+            // for legacy logs
+            var dealerSeparator = " @ "
+            if unparsedDealer?.contains(" # ") ?? false {
+                dealerSeparator = " # "
+            }
+
+            let dealerNameIdArray = unparsedDealer?.components(separatedBy: dealerSeparator)
             if let dealer = self.players.filter({$0.id == dealerNameIdArray?.last}).first {
                 let hand = Hand()
                 hand.id = handId

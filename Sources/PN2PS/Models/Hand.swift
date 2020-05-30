@@ -42,6 +42,7 @@ class Hand {
             previousAction[player.id ?? "error"] = 0
         }
         
+        var foundHoleCards = false
         var isFirstAction = false
         var uncalledBet = 0.0
         var totalPotSize = 0.0
@@ -134,9 +135,14 @@ class Hand {
             if line.contains("Your hand") {
                 print("*** HOLE CARDS ***")
                 print("Dealt to \(heroName) [\(self.hole?.map({$0.rawValue}).joined(separator: " ") ?? "error")]")
+                foundHoleCards = true
             }
 
             if line.contains("calls") || line.contains("raises") || line.contains("checks") || line.contains("folds") || line.contains("wins") || line.contains("gained") {
+                if !foundHoleCards {
+                    print("*** HOLE CARDS ***")
+                    foundHoleCards = true                 
+                }
                 let nameIdArray = line.components(separatedBy: "\" ").first?.components(separatedBy: " @ ")
                 if let player = self.players.filter({$0.id == nameIdArray?.last}).first {
                     if line.contains("raises") {
