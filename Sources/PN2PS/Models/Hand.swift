@@ -28,7 +28,7 @@ class Hand {
     var bigBlindSize: Int = 0
 
     
-    func printPokerStarsDescription(heroName: String) {
+    func printPokerStarsDescription(heroName: String, multiplier: Double) {
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy/MM/dd HH:mm:ss"
@@ -50,7 +50,7 @@ class Hand {
         var streetDescription = "before Flop"
         for line in self.lines {
             if line.contains("starting hand") {
-                print("PokerStars Hand #\(self.id): Hold'em No Limit (\(String(format: "$%.02f", Double(self.smallBlindSize) / 100.0))/\(String(format: "$%.02f", Double(self.bigBlindSize) / 100.0 )) USD) - \(dateString) ET")
+                print("PokerStars Hand #\(self.id): Hold'em No Limit (\(String(format: "$%.02f", Double(self.smallBlindSize) * multiplier))/\(String(format: "$%.02f", Double(self.bigBlindSize) * multiplier )) USD) - \(dateString) ET")
                 
                 var dealerIndex = 1
                 var currentIndex = self.seats.firstIndex(where: {$0.player?.name == heroName}) ?? 1
@@ -76,9 +76,9 @@ class Hand {
                     }
                 }
                 
-                print("\(self.smallBlind?.name ?? "Unknown"): posts small blind \(String(format: "$%.02f", Double(self.smallBlindSize) / 100.0))")
+                print("\(self.smallBlind?.name ?? "Unknown"): posts small blind \(String(format: "$%.02f", Double(self.smallBlindSize) * multiplier))")
                 for bigBlind in self.bigBlind {
-                    print("\(bigBlind.name ?? "Unknown"): posts big blind \(String(format: "$%.02f", Double(self.bigBlindSize) / 100.0 ))")
+                    print("\(bigBlind.name ?? "Unknown"): posts big blind \(String(format: "$%.02f", Double(self.bigBlindSize) * multiplier ))")
                 }
             }
             
@@ -119,12 +119,12 @@ class Hand {
             }
             
             if line.contains("small blind") {
-                let smallBlindSize = (Double(line.components(separatedBy: "small blind of ").last ?? "0") ?? 0) / 100.0
+                let smallBlindSize = (Double(line.components(separatedBy: "small blind of ").last ?? "0") ?? 0) * multiplier
                 previousAction[self.smallBlind?.id ?? "error"] = smallBlindSize
             }
             
             if line.contains("big blind") {
-                let bigBlindSize = (Double(line.components(separatedBy: "big blind of ").last ?? "0") ?? 0) / 100.0
+                let bigBlindSize = (Double(line.components(separatedBy: "big blind of ").last ?? "0") ?? 0) * multiplier
                 uncalledBet = bigBlindSize
                 currentBet = bigBlindSize
                 for player in self.bigBlind {
@@ -153,7 +153,7 @@ class Hand {
                             self.seats[index].preFlopBet = true
                         }
 
-                        let raiseSize = (Double(line.components(separatedBy: "with ").last ?? "0") ?? 0) / 100.0
+                        let raiseSize = (Double(line.components(separatedBy: "with ").last ?? "0") ?? 0) * multiplier
                         if isFirstAction {
                             print("\(player.name ?? "unknown"): bets \(String(format: "$%.02f", raiseSize))")
                             uncalledBet = raiseSize
@@ -172,7 +172,7 @@ class Hand {
                             self.seats[index].preFlopBet = true
                         }
 
-                        let callSize = (Double(line.components(separatedBy: "with ").last ?? "0") ?? 0) / 100.0
+                        let callSize = (Double(line.components(separatedBy: "with ").last ?? "0") ?? 0) * multiplier
                         if isFirstAction {
                             print("\(player.name ?? "unknown"): bets \(String(format: "$%.02f", callSize))")
                             uncalledBet = callSize
@@ -203,7 +203,7 @@ class Hand {
                     }
                     
                     if line.contains("wins") {
-                        let winPotSize = (Double(line.components(separatedBy: " wins ").last?.components(separatedBy: " with ").first ?? "0") ?? 0.0) / 100.0
+                        let winPotSize = (Double(line.components(separatedBy: " wins ").last?.components(separatedBy: " with ").first ?? "0") ?? 0.0) * multiplier
                         let winDescription = line.components(separatedBy: " wins ").last?.components(separatedBy: " with ").last?.components(separatedBy: " (").first ?? "error"
                         let winningHandComponents = line.components(separatedBy: "hand: ").last?.replacingOccurrences(of: ")", with: "").components(separatedBy: ", ")
                         totalPotSize = winPotSize
@@ -225,7 +225,7 @@ class Hand {
                     }
                     
                     if line.contains("gained") {
-                        var gainedPotSize = (Double(line.components(separatedBy: " gained ").last ?? "0") ?? 0) / 100.0
+                        var gainedPotSize = (Double(line.components(separatedBy: " gained ").last ?? "0") ?? 0) * multiplier
                         
                         if uncalledBet > 0 {
                             print("Uncalled bet (\(String(format: "$%.02f", uncalledBet))) returned to \(player.name ?? "Unknown")")
@@ -239,8 +239,8 @@ class Hand {
                             }
                             
                             // catching edge case of folding around preflop
-                            if preFlopAction == (Double(self.bigBlindSize + self.smallBlindSize) / 100.0) {
-                                gainedPotSize = Double(self.smallBlindSize) / 100.0
+                            if preFlopAction == (Double(self.bigBlindSize + self.smallBlindSize) * multiplier) {
+                                gainedPotSize = Double(self.smallBlindSize) * multiplier
                             }
                         }
 

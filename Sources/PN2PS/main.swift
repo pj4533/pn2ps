@@ -16,6 +16,9 @@ struct PN2PS: ParsableCommand {
 	@Option(name: .shortAndLong, default: nil, help: "Limit amount of hands processed")
     private var limit: Int?
 
+    @Option(name: .shortAndLong, default: nil, help: "Multiply bet amounts by given value")
+    private var multiplier: Double?
+
 	@Flag(name: .shortAndLong, help: "Cards are in emoji format")
     private var emoji: Bool
 
@@ -24,11 +27,11 @@ struct PN2PS: ParsableCommand {
     	
     	if let limit = self.limit { 
 	        for hand in game.hands.prefix(limit) {
-	            hand.printPokerStarsDescription(heroName: self.heroname)
+	            hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0)
 	        }
     	} else {
 	        for hand in game.hands {
-	            hand.printPokerStarsDescription(heroName: self.heroname)
+	            hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0)
 	        }    		
     	}
 
