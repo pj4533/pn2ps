@@ -17,7 +17,7 @@ class Hand {
     var flop: [Card]?
     var pot: Int = 0
     var uncalledBet: Int = 0
-    var id: Int = 0
+    var id: String = UUID().uuidString.replacingOccurrences(of: "-", with: "")
     var dealer: Player?
     var missingSmallBlinds: [Player] = []
     var smallBlind: Player?
