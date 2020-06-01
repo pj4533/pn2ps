@@ -140,6 +140,7 @@ class Hand {
                             isFirstAction = false
                         } else {
                             let uncalledPortionOfBet = callSize - (previousAction[player.id ?? "error"] ?? 0.0)
+                            uncalledBet = 0
                             print("\(player.name ?? "unknown"): calls \(String(format: "$%.02f", uncalledPortionOfBet))")
                         }
                         previousAction[player.id ?? "error"] = callSize
