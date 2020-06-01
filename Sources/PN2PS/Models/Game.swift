@@ -202,7 +202,7 @@ class Game: NSObject {
                 if msg?.contains("small blind") ?? false {
                     let smallBlindSize = Int(msg?.components(separatedBy: "small blind of ").last ?? "0") ?? 0
                     self.currentHand?.smallBlindSize = smallBlindSize
-                    self.currentHand?.smallBlind = player
+                    self.currentHand?.smallBlind.append(player)
                     player.stack = player.stack - smallBlindSize
                     player.existingPotEquity = smallBlindSize
                     

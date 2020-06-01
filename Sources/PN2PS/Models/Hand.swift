@@ -19,7 +19,7 @@ class Hand {
     var uncalledBet: Int = 0
     var id: Int = 0
     var dealer: Player?
-    var smallBlind: Player?
+    var smallBlind: [Player] = []
     var bigBlind: [Player] = []
     var players: [Player] = []
     var seats: [Seat] = []
@@ -76,7 +76,9 @@ class Hand {
                     }
                 }
                 
-                print("\(self.smallBlind?.name ?? "Unknown"): posts small blind \(String(format: "$%.02f", Double(self.smallBlindSize) * multiplier))")
+                for smallBlind in self.smallBlind {
+                    print("\(smallBlind.name ?? "Unknown"): posts small blind \(String(format: "$%.02f", Double(self.smallBlindSize) * multiplier))")
+                }
                 for bigBlind in self.bigBlind {
                     print("\(bigBlind.name ?? "Unknown"): posts big blind \(String(format: "$%.02f", Double(self.bigBlindSize) * multiplier ))")
                 }
@@ -101,8 +103,10 @@ class Hand {
                     if self.dealer?.id == seat.player?.id {
                         summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (button)")
                     }
-                    if self.smallBlind?.id == seat.player?.id {
-                        summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (small blind)")
+                    for smallBlind in self.smallBlind {
+                        if smallBlind.id == seat.player?.id {
+                            summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (small blind)")
+                        }
                     }
                     for bigBlind in self.bigBlind {
                         if bigBlind.id == seat.player?.id {
@@ -120,7 +124,9 @@ class Hand {
             
             if line.contains("small blind") {
                 let smallBlindSize = (Double(line.components(separatedBy: "small blind of ").last ?? "0") ?? 0) * multiplier
-                previousAction[self.smallBlind?.id ?? "error"] = smallBlindSize
+                for player in self.smallBlind {
+                    previousAction[player.id ?? "error"] = smallBlindSize
+                }
             }
             
             if line.contains("big blind") {
