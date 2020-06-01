@@ -19,7 +19,8 @@ class Hand {
     var uncalledBet: Int = 0
     var id: Int = 0
     var dealer: Player?
-    var smallBlind: [Player] = []
+    var missingSmallBlinds: [Player] = []
+    var smallBlind: Player?
     var bigBlind: [Player] = []
     var players: [Player] = []
     var seats: [Seat] = []
@@ -42,10 +43,16 @@ class Hand {
             previousAction[player.id ?? "error"] = 0
         }
         
+        previousAction[self.smallBlind?.id ?? "error"] = Double(self.smallBlindSize) * multiplier
+
+        for player in self.bigBlind {
+            previousAction[player.id ?? "error"] = Double(self.bigBlindSize) * multiplier
+        }
+
         var foundHoleCards = false
         var isFirstAction = false
-        var uncalledBet = 0.0
-        var currentBet = 0.0
+        var uncalledBet = Double(self.bigBlindSize) * multiplier
+        var currentBet = Double(self.bigBlindSize) * multiplier
         var totalPotSize = 0.0
         var streetDescription = "before Flop"
         for line in self.lines {
@@ -76,69 +83,16 @@ class Hand {
                     }
                 }
                 
-                for smallBlind in self.smallBlind {
-                    print("\(smallBlind.name ?? "Unknown"): posts small blind \(String(format: "$%.02f", Double(self.smallBlindSize) * multiplier))")
+                print("\(self.smallBlind?.name ?? "Unknown"): posts small blind \(String(format: "$%.02f", Double(self.smallBlindSize) * multiplier))")
+                
+                for smallBlind in self.missingSmallBlinds {
+                    print("\(smallBlind.name ?? "Unknown"): posts missing small blind \(String(format: "$%.02f", Double(self.smallBlindSize) * multiplier))")
                 }
                 for bigBlind in self.bigBlind {
                     print("\(bigBlind.name ?? "Unknown"): posts big blind \(String(format: "$%.02f", Double(self.bigBlindSize) * multiplier ))")
                 }
             }
-            
-            if line.contains("ending hand") {
-                print("*** SUMMARY ***")
-                print("Total pot: \(String(format: "$%.02f", totalPotSize)) | Rake 0")
-                var board: [Card] = []
-                board.append(contentsOf: self.flop ?? [])
-                if let turn = self.turn { board.append(turn) }
-                if let river = self.river { board.append(river) }
-                
-                if board.count > 0 {
-                    print("Board: [\(board.map({$0.rawValue}).joined(separator: " "))]")
-                }
-                var currentIndex = self.seats.firstIndex(where: {$0.player?.name == heroName}) ?? 1
-                for seatIndex in 1...(self.seats.count) {
-                    let seat = self.seats[currentIndex]
-
-                    var summary = seat.summary
-                    if self.dealer?.id == seat.player?.id {
-                        summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (button)")
-                    }
-                    for smallBlind in self.smallBlind {
-                        if smallBlind.id == seat.player?.id {
-                            summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (small blind)")
-                        }
-                    }
-                    for bigBlind in self.bigBlind {
-                        if bigBlind.id == seat.player?.id {
-                            summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (big blind)")
-                        }
-                    }
-                    print("Seat \(seatIndex): \(summary)")
-
-                    currentIndex = currentIndex + 1
-                    if currentIndex == self.seats.count {
-                        currentIndex = 0
-                    }
-                }
-            }
-            
-            if line.contains("small blind") {
-                let smallBlindSize = (Double(line.components(separatedBy: "small blind of ").last ?? "0") ?? 0) * multiplier
-                for player in self.smallBlind {
-                    previousAction[player.id ?? "error"] = smallBlindSize
-                }
-            }
-            
-            if line.contains("big blind") {
-                let bigBlindSize = (Double(line.components(separatedBy: "big blind of ").last ?? "0") ?? 0) * multiplier
-                uncalledBet = bigBlindSize
-                currentBet = bigBlindSize
-                for player in self.bigBlind {
-                    previousAction[player.id ?? "error"] = bigBlindSize
-                }
-                
-            }
-            
+                        
             
             if line.contains("Your hand") {
                 print("*** HOLE CARDS ***")
@@ -146,7 +100,7 @@ class Hand {
                 foundHoleCards = true
             }
 
-            if line.contains("calls") || line.contains("raises") || line.contains("checks") || line.contains("folds") || line.contains("wins") || line.contains("gained") {
+            if line.contains("shows") || line.contains("calls") || line.contains("raises") || line.contains("checks") || line.contains("folds") || line.contains("wins") || line.contains("gained") {
                 if !foundHoleCards {
                     print("*** HOLE CARDS ***")
                     foundHoleCards = true                 
@@ -205,6 +159,17 @@ class Hand {
                                 self.seats[index].summary = "\(player.name ?? "Unknown") folded \(streetDescription)"
                             }
                             
+                        }
+                    }
+                    
+                    if line.contains("shows") {
+                        let handComponents = line.components(separatedBy: "shows a ").last?.replacingOccurrences(of: ".", with: "").components(separatedBy: ", ")
+                        if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
+                            if self.useEmoji {
+                                self.seats[index].showedHand = handComponents?.map({ (EmojiCard(rawValue: $0)?.emojiFlip.rawValue ?? "error") }).joined(separator: " ") ?? "error"
+                            } else {
+                                self.seats[index].showedHand = handComponents?.joined(separator: " ") ?? "error"
+                            }
                         }
                     }
                     
@@ -294,8 +259,52 @@ class Hand {
                 streetDescription = "on the River"
             }
             
-            
+            if self.lines.last == line {
+                print("*** SUMMARY ***")
+                print("Total pot: \(String(format: "$%.02f", totalPotSize)) | Rake 0")
+                var board: [Card] = []
+                board.append(contentsOf: self.flop ?? [])
+                if let turn = self.turn { board.append(turn) }
+                if let river = self.river { board.append(river) }
+                
+                if board.count > 0 {
+                    print("Board: [\(board.map({$0.rawValue}).joined(separator: " "))]")
+                }
+                var currentIndex = self.seats.firstIndex(where: {$0.player?.name == heroName}) ?? 1
+                for seatIndex in 1...(self.seats.count) {
+                    let seat = self.seats[currentIndex]
 
+                    var summary = seat.summary
+                    if self.dealer?.id == seat.player?.id {
+                        summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (button)")
+                    }
+
+                    if self.smallBlind?.id == seat.player?.id {
+                        summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (small blind)")
+                    }
+
+                    for smallBlind in self.missingSmallBlinds {
+                        if smallBlind.id == seat.player?.id {
+                            summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (missing small blind)")
+                        }
+                    }
+                    for bigBlind in self.bigBlind {
+                        if bigBlind.id == seat.player?.id {
+                            summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (big blind)")
+                        }
+                    }
+                    if seat.showedHand != nil {
+                        print("Seat \(seatIndex): \(summary) [\(seat.showedHand ?? "error")]")
+                    } else {
+                        print("Seat \(seatIndex): \(summary)")
+                    }
+
+                    currentIndex = currentIndex + 1
+                    if currentIndex == self.seats.count {
+                        currentIndex = 0
+                    }
+                }
+            }
         }
 
         

@@ -114,9 +114,6 @@ class Game: NSObject {
                 }
             }
         } else if msg?.starts(with: "-- ending hand ") ?? false {
-            self.currentHand?.lines.append(msg ?? "unknown line")
-
-            self.currentHand = nil
             if debugHandAction {
                 print("----")
             }
@@ -202,7 +199,11 @@ class Game: NSObject {
                 if msg?.contains("small blind") ?? false {
                     let smallBlindSize = Int(msg?.components(separatedBy: "small blind of ").last ?? "0") ?? 0
                     self.currentHand?.smallBlindSize = smallBlindSize
-                    self.currentHand?.smallBlind.append(player)
+                    if msg?.contains("missing") ?? false {
+                        self.currentHand?.missingSmallBlinds.append(player)
+                    } else {
+                        self.currentHand?.smallBlind = player
+                    }
                     player.stack = player.stack - smallBlindSize
                     player.existingPotEquity = smallBlindSize
                     

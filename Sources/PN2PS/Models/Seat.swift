@@ -12,4 +12,5 @@ struct Seat {
     var player: Player?
     var summary: String = ""
     var preFlopBet: Bool = false
+    var showedHand: String?
 }
