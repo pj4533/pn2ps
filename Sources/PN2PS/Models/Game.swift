@@ -12,7 +12,7 @@ import SwiftCSV
 
 class Game: NSObject {
 
-    var useEmoji: Bool = false
+    var useEmoji: Bool = true
     var debugHandAction: Bool = false
     var showErrors: Bool = false
     
@@ -22,10 +22,8 @@ class Game: NSObject {
 
     var legacyDateFormat: Bool = false
 
-    init(filename: String, useEmoji: Bool = false) {
+    init(filename: String) {
         super.init()
-        
-        self.useEmoji = useEmoji
         
         do {
             let csvFile: CSV = try CSV(url: URL(fileURLWithPath: filename))
@@ -36,6 +34,9 @@ class Game: NSObject {
                 msgKey = "msg"
                 orderKey = "created_at"
             }
+            
+            self.useEmoji = self.shouldUseEmoji(at: csvFile.namedRows.reversed().first?["at"])
+            
             for row in csvFile.namedRows.reversed() {
                 if row[msgKey]?.starts(with: "The player ") ?? false {
                     self.parsePlayerLine(msg: row[msgKey])
@@ -51,6 +52,20 @@ class Game: NSObject {
         } catch {
             print("Error loading file")
         }
+    }
+    
+    private func shouldUseEmoji(at: String?) -> Bool {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        if self.legacyDateFormat {
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS+00"
+        } else {
+            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        }
+        let date = formatter.date(from: at ?? "") ?? Date()
+        let firstEmojiDate = Date(timeIntervalSince1970: 1590537600)
+        
+        return date > firstEmojiDate
     }
     
     private func resetSmallBlind() {

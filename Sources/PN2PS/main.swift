@@ -19,11 +19,8 @@ struct PN2PS: ParsableCommand {
     @Option(name: .shortAndLong, default: nil, help: "Multiply bet amounts by given value")
     private var multiplier: Double?
 
-	@Flag(name: .shortAndLong, help: "Cards are in emoji format")
-    private var emoji: Bool
-
 	func run() {
-        let game = Game(filename: self.filename, useEmoji: self.emoji)
+        let game = Game(filename: self.filename)
     	
     	if let limit = self.limit { 
 	        for hand in game.hands.prefix(limit) {
