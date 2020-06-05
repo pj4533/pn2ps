@@ -9,6 +9,8 @@
 import Foundation
 
 class Hand {
+    var stacks: [Player] = []
+
     var date: Date?
     var useEmoji: Bool = false
     var hole: [Card]?
@@ -28,6 +30,7 @@ class Hand {
     var smallBlindSize: Int = 0
     var bigBlindSize: Int = 0
 
+    var printedShowdown: Bool = false
     
     func printPokerStarsDescription(heroName: String, multiplier: Double) {
 
@@ -76,7 +79,9 @@ class Hand {
                 
                 currentIndex = self.seats.firstIndex(where: {$0.player?.name == heroName}) ?? 1
                 for seatIndex in 1...(self.seats.count) {
-                    print("Seat \(seatIndex): \(self.seats[currentIndex].player?.name ?? "error")")
+                    let startingStack = self.stacks.first(where: {$0.name == self.seats[currentIndex].player?.name})?.stack
+                    let stackSize = "\(String(format: "$%.02f", Double(startingStack ?? 0) * multiplier))"
+                    print("Seat \(seatIndex): \(self.seats[currentIndex].player?.name ?? "error") (\(stackSize) in chips)")
                     currentIndex = currentIndex + 1
                     if currentIndex == self.seats.count {
                         currentIndex = 0
@@ -85,9 +90,9 @@ class Hand {
                 
                 print("\(self.smallBlind?.name ?? "Unknown"): posts small blind \(String(format: "$%.02f", Double(self.smallBlindSize) * multiplier))")
                 
-                for smallBlind in self.missingSmallBlinds {
-                    print("\(smallBlind.name ?? "Unknown"): posts missing small blind \(String(format: "$%.02f", Double(self.smallBlindSize) * multiplier))")
-                }
+//                for smallBlind in self.missingSmallBlinds {
+//                    print("\(smallBlind.name ?? "Unknown"): posts missing small blind \(String(format: "$%.02f", Double(self.smallBlindSize) * multiplier))")
+//                }
                 for bigBlind in self.bigBlind {
                     print("\(bigBlind.name ?? "Unknown"): posts big blind \(String(format: "$%.02f", Double(self.bigBlindSize) * multiplier ))")
                 }
@@ -175,11 +180,18 @@ class Hand {
                     }
                     
                     if line.contains("wins") {
-                        let winPotSize = (Double(line.components(separatedBy: " wins ").last?.components(separatedBy: " with ").first ?? "0") ?? 0.0) * multiplier
+                        var winPotSize = (Double(line.components(separatedBy: " wins ").last?.components(separatedBy: " with ").first ?? "0") ?? 0.0) * multiplier
+                        
+                        // remove missing smalls -- poker stars doesnt do this?
+                        winPotSize = winPotSize - (Double(self.smallBlindSize * self.missingSmallBlinds.count) * multiplier)
+
                         let winDescription = line.components(separatedBy: " wins ").last?.components(separatedBy: " with ").last?.components(separatedBy: " (").first ?? "error"
                         let winningHandComponents = line.components(separatedBy: "hand: ").last?.replacingOccurrences(of: ")", with: "").components(separatedBy: ", ")
                         totalPotSize = winPotSize
-                        print("*** SHOW DOWN ***")
+                        if !self.printedShowdown {
+                            print("*** SHOW DOWN ***")
+                            self.printedShowdown = true
+                        }
                         if self.useEmoji {
                             print("\(player.name ?? "Unknown"): shows [\(winningHandComponents?.map({ (EmojiCard(rawValue: $0)?.emojiFlip.rawValue ?? "error") }).joined(separator: " ") ?? "error")] (\(winDescription))")
                         } else {
@@ -199,6 +211,9 @@ class Hand {
                     if line.contains("gained") {
                         var gainedPotSize = (Double(line.components(separatedBy: " gained ").last ?? "0") ?? 0) * multiplier
                         
+                        // remove missing smalls -- poker stars doesnt do this?
+                        gainedPotSize = gainedPotSize - (Double(self.smallBlindSize * self.missingSmallBlinds.count) * multiplier)
+
                         if uncalledBet > 0 {
                             print("Uncalled bet (\(String(format: "$%.02f", uncalledBet))) returned to \(player.name ?? "Unknown")")
                         }
@@ -284,11 +299,11 @@ class Hand {
                         summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (small blind)")
                     }
 
-                    for smallBlind in self.missingSmallBlinds {
-                        if smallBlind.id == seat.player?.id {
-                            summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (missing small blind)")
-                        }
-                    }
+//                    for smallBlind in self.missingSmallBlinds {
+//                        if smallBlind.id == seat.player?.id {
+//                            summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (missing small blind)")
+//                        }
+//                    }
                     for bigBlind in self.bigBlind {
                         if bigBlind.id == seat.player?.id {
                             summary = summary.replacingOccurrences(of: seat.player?.name ?? "Unknown", with: "\(seat.player?.name ?? "Unknown") (big blind)")

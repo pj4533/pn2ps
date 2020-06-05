@@ -20,17 +20,19 @@ struct PN2PS: ParsableCommand {
     private var multiplier: Double?
 
 	func run() {
+
         let game = Game(filename: self.filename)
-    	
-    	if let limit = self.limit { 
-	        for hand in game.hands.prefix(limit) {
-	            hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0)
-	        }
-    	} else {
-	        for hand in game.hands {
-	            hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0)
-	        }    		
-    	}
+        
+        if let limit = self.limit {
+            for hand in game.hands.prefix(limit) {
+                hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0)
+            }
+        } else {
+            for hand in game.hands {
+                hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0)
+            }
+        }
+
 
     }
 }
