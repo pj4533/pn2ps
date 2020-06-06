@@ -32,7 +32,7 @@ class Hand {
 
     var printedShowdown: Bool = false
     
-    func printPokerStarsDescription(heroName: String, multiplier: Double) {
+    func printPokerStarsDescription(heroName: String, multiplier: Double, tableName: String) {
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy/MM/dd HH:mm:ss"
@@ -75,7 +75,7 @@ class Hand {
                     }
                 }
                 
-                print("Table 'DGen' 9-max Seat #\(dealerIndex) is the button")
+                print("Table '\(tableName)' 9-max Seat #\(dealerIndex) is the button")
                 
                 currentIndex = self.seats.firstIndex(where: {$0.player?.name == heroName}) ?? 1
                 for seatIndex in 1...(self.seats.count) {

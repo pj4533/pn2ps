@@ -19,17 +19,20 @@ struct PN2PS: ParsableCommand {
     @Option(name: .shortAndLong, default: nil, help: "Multiply bet amounts by given value")
     private var multiplier: Double?
 
+    @Option(name: .shortAndLong, default: nil, help: "Table Name")
+    private var tableName: String?
+
 	func run() {
 
         let game = Game(filename: self.filename)
         
         if let limit = self.limit {
             for hand in game.hands.prefix(limit) {
-                hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0)
+                hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0, tableName: self.tableName ?? "DGen")
             }
         } else {
             for hand in game.hands {
-                hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0)
+                hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0, tableName: self.tableName ?? "DGen")
             }
         }
 
