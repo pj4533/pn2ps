@@ -8,7 +8,15 @@
 
 import Foundation
 import SwiftCSV
+import var CommonCrypto.CC_MD5_DIGEST_LENGTH
+import func CommonCrypto.CC_MD5
+import typealias CommonCrypto.CC_LONG
 
+extension Data {
+    func hexEncodedString() -> String {
+        return map { String(format: "%02hhx", $0) }.joined()
+    }
+}
 
 class Game: NSObject {
 
@@ -54,6 +62,23 @@ class Game: NSObject {
         }
     }
     
+    func MD5(string: String) -> Data {
+        let length = Int(CC_MD5_DIGEST_LENGTH)
+        let messageData = string.data(using:.utf8)!
+        var digestData = Data(count: length)
+
+        _ = digestData.withUnsafeMutableBytes { digestBytes -> UInt8 in
+            messageData.withUnsafeBytes { messageBytes -> UInt8 in
+                if let messageBytesBaseAddress = messageBytes.baseAddress, let digestBytesBlindMemory = digestBytes.bindMemory(to: UInt8.self).baseAddress {
+                    let messageLength = CC_LONG(messageData.count)
+                    CC_MD5(messageBytesBaseAddress, messageLength, digestBytesBlindMemory)
+                }
+                return 0
+            }
+        }
+        return digestData
+    }
+
     private func shouldUseEmoji(at: String?) -> Bool {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -111,6 +136,13 @@ class Game: NSObject {
             let dealerNameIdArray = unparsedDealer?.components(separatedBy: dealerSeparator)
             if let dealer = self.players.filter({$0.id == dealerNameIdArray?.last}).first {
                 let hand = Hand()
+
+                let handIdHex = String(self.MD5(string: "\(dealer.id ?? "error")-\(order ?? "error")").hexEncodedString().prefix(15))                
+                var hexInt: UInt64 = 0
+                let scanner = Scanner(string: handIdHex)
+                scanner.scanHexInt64(&hexInt)
+                hand.id = hexInt
+                
                 hand.stacks = self.players.filter({$0.sitting == true})
                 hand.date = date
                 hand.useEmoji = self.useEmoji
@@ -120,6 +152,13 @@ class Game: NSObject {
                 self.hands.append(hand)
             } else if msg?.contains("dead button") ?? false {
                 let hand = Hand()
+
+                let handIdHex = String(self.MD5(string: "deadbutton-\(order ?? "error")").hexEncodedString().prefix(15))
+                var hexInt: UInt64 = 0
+                let scanner = Scanner(string: handIdHex)
+                scanner.scanHexInt64(&hexInt)
+                hand.id = hexInt
+                
                 hand.stacks = self.players.filter({$0.sitting == true})
                 hand.date = date
                 hand.useEmoji = self.useEmoji
@@ -147,7 +186,7 @@ class Game: NSObject {
             })
 
             if debugHandAction {
-                print("#\(self.currentHand?.id ?? "") - hole cards: \(self.currentHand?.hole?.map({$0.rawValue}) ?? [])")
+                print("#\(self.currentHand?.id ?? 0) - hole cards: \(self.currentHand?.hole?.map({$0.rawValue}) ?? [])")
             }
         } else if msg?.starts(with: "flop") ?? false {
             self.resetPotEquity()
@@ -163,7 +202,7 @@ class Game: NSObject {
             })
             
             if debugHandAction {
-                print("#\(self.currentHand?.id ?? "") - flop: \(self.currentHand?.flop?.map({$0.rawValue}) ?? [])")
+                print("#\(self.currentHand?.id ?? 0) - flop: \(self.currentHand?.flop?.map({$0.rawValue}) ?? [])")
             }
 
         } else if msg?.starts(with: "turn") ?? false {
@@ -178,7 +217,7 @@ class Game: NSObject {
             }
             
             if debugHandAction {
-                print("#\(self.currentHand?.id ?? "") - turn: \(self.currentHand?.turn?.rawValue ?? "?")")
+                print("#\(self.currentHand?.id ?? 0) - turn: \(self.currentHand?.turn?.rawValue ?? "?")")
             }
 
         } else if msg?.starts(with: "river") ?? false {
@@ -193,7 +232,7 @@ class Game: NSObject {
             }
 
             if debugHandAction {
-                print("#\(self.currentHand?.id ?? "") - river: \(self.currentHand?.river?.rawValue ?? "?")")
+                print("#\(self.currentHand?.id ?? 0) - river: \(self.currentHand?.river?.rawValue ?? "?")")
             }
 
         } else {
@@ -215,7 +254,7 @@ class Game: NSObject {
                     player.stack = player.stack - bigBlindSize
                     player.existingPotEquity = bigBlindSize
                     if debugHandAction {
-                        print("#\(self.currentHand?.id ?? "") - \(player.name ?? "Unknown Player") posts big \(bigBlindSize)  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
+                        print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") posts big \(bigBlindSize)  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
                     }
                 }
 
@@ -236,7 +275,7 @@ class Game: NSObject {
 
                     self.currentHand?.pot = (self.currentHand?.pot ?? 0) + smallBlindSize
                     if debugHandAction {
-                        print("#\(self.currentHand?.id ?? "") - \(player.name ?? "Unknown Player") posts small \(smallBlindSize)  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
+                        print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") posts small \(smallBlindSize)  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
                     }
                 }
                 
@@ -253,7 +292,7 @@ class Game: NSObject {
                     player.existingPotEquity = raiseSize
 
                     if debugHandAction {
-                        print("#\(self.currentHand?.id ?? "") - \(player.name ?? "Unknown Player") raises \(raiseSize)  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
+                        print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") raises \(raiseSize)  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
                     }
                 }
 
@@ -272,7 +311,7 @@ class Game: NSObject {
                     player.existingPotEquity = callSize
 
                     if debugHandAction {
-                        print("#\(self.currentHand?.id ?? "") - \(player.name ?? "Unknown Player") calls \(callSize)  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
+                        print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") calls \(callSize)  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
                     }
                 }
                 
@@ -288,7 +327,7 @@ class Game: NSObject {
                     player.stack = player.stack + (gainedPotSize + (self.currentHand?.uncalledBet ?? 0))
                     
                     if debugHandAction {
-                        print("#\(self.currentHand?.id ?? "") - \(player.name ?? "Unknown Player") wins pot of \((gainedPotSize + (self.currentHand?.uncalledBet ?? 0)))  without showdown. (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
+                        print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") wins pot of \((gainedPotSize + (self.currentHand?.uncalledBet ?? 0)))  without showdown. (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
                     }
                 }
 
@@ -297,13 +336,13 @@ class Game: NSObject {
                     
                     player.stack = player.stack + winPotSize
                     if debugHandAction {
-                        print("#\(self.currentHand?.id ?? "") - \(player.name ?? "Unknown Player") wins pot of \(winPotSize)  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
+                        print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") wins pot of \(winPotSize)  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
                     }
                 }
                 
                 if msg?.contains("checks") ?? false {
                     if debugHandAction {
-                        print("#\(self.currentHand?.id ?? "") - \(player.name ?? "Unknown Player") checks  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
+                        print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") checks  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
                     }
                 }
 
@@ -312,7 +351,7 @@ class Game: NSObject {
                         self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
                     }
                     if debugHandAction {
-                        print("#\(self.currentHand?.id ?? "") - \(player.name ?? "Unknown Player") folds  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
+                        print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") folds  (Stack: \(player.stack) Pot: \(self.currentHand?.pot ?? 0))")
                     }
                 }
 
