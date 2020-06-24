@@ -9,8 +9,6 @@
 import Foundation
 
 class Hand {
-    var stacks: [Player] = []
-
     var date: Date?
     var useEmoji: Bool = false
     var hole: [Card]?
@@ -76,28 +74,35 @@ class Hand {
                 }
                 
                 print("Table '\(tableName)' 9-max Seat #\(dealerIndex) is the button")
+            }
+                        
+            if line.contains("Players stacks:") {
+                let playersWithStacks = line.replacingOccurrences(of: "Players stacks: ", with: "").components(separatedBy: " | ")
+                var stacks : [String:Int] = [:]
+                for playerWithStack in playersWithStacks {
+                    let nameIdArray = playerWithStack.components(separatedBy: "\" ").first?.components(separatedBy: " @ ")
+                    let stackSize = playerWithStack.components(separatedBy: "\" (").last?.replacingOccurrences(of: ")", with: "")
+                    stacks[nameIdArray?.last ?? ""] = Int(stackSize ?? "0")
+                }
                 
-                currentIndex = self.seats.firstIndex(where: {$0.player?.name == heroName}) ?? 1
+                var currentIndex = self.seats.firstIndex(where: {$0.player?.name == heroName}) ?? 1
                 for seatIndex in 1...(self.seats.count) {
-                    let startingStack = self.stacks.first(where: {$0.name == self.seats[currentIndex].player?.name})?.stack
-                    let stackSize = "\(String(format: "$%.02f", Double(startingStack ?? 0) * multiplier))"
-                    print("Seat \(seatIndex): \(self.seats[currentIndex].player?.name ?? "error") (\(stackSize) in chips)")
-                    currentIndex = currentIndex + 1
-                    if currentIndex == self.seats.count {
-                        currentIndex = 0
+                    if let playerId = self.seats[currentIndex].player?.id {
+                        let stackSize = "\(String(format: "$%.02f", Double(stacks[playerId] ?? 0) * multiplier))"
+                        print("Seat \(seatIndex): \(self.seats[currentIndex].player?.name ?? "error") (\(stackSize) in chips)")
+                        currentIndex = currentIndex + 1
+                        if currentIndex == self.seats.count {
+                            currentIndex = 0
+                        }
                     }
                 }
                 
                 print("\(self.smallBlind?.name ?? "Unknown"): posts small blind \(String(format: "$%.02f", Double(self.smallBlindSize) * multiplier))")
                 
-//                for smallBlind in self.missingSmallBlinds {
-//                    print("\(smallBlind.name ?? "Unknown"): posts missing small blind \(String(format: "$%.02f", Double(self.smallBlindSize) * multiplier))")
-//                }
                 for bigBlind in self.bigBlind {
                     print("\(bigBlind.name ?? "Unknown"): posts big blind \(String(format: "$%.02f", Double(self.bigBlindSize) * multiplier ))")
                 }
             }
-                        
             
             if line.contains("Your hand") {
                 print("*** HOLE CARDS ***")
