@@ -325,6 +325,7 @@ class Hand {
                         currentIndex = 0
                     }
                 }
+                print("")
             }
         }
 
