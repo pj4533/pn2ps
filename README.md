@@ -26,7 +26,7 @@ OPTIONS:
 3. Command to make app executable:  `chmod +x pn2ps`
 4. Command to run:  `./pn2ps <filename> <heroname> -m 0.01 > output_file.txt`
 
-You might need to give MacOS permission to run the app, also the 'game id' is the last portion of the PokerNow URL (not the whole URL).
+You might also need to give MacOS permission to run the app.
 
 ### Helpful Commands
 
