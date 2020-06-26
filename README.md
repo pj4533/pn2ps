@@ -19,6 +19,11 @@ OPTIONS:
   -h, --help              Show help information.
 ```
 
+### Notes
+
+* Mac only
+* Command line only
+
 ### How To Run
 
 1. Download the latest [release](https://github.com/pj4533/pn2ps/releases)
@@ -28,7 +33,7 @@ OPTIONS:
 
 You might also need to give MacOS permission to run the app.
 
-### Helpful Commands
+### Developer Commands
 
 `swift build` Builds app to the `.build` folder
 
@@ -40,7 +45,7 @@ You might also need to give MacOS permission to run the app.
 
 `swift package generate-xcodeproj` Generates an xcode project file
 
-### Example
+### Example Output
 
 ```
 ~/projects/pn2ps ] swift run pn2ps poker_now_log_UGuOwS47MCsTi83geNU0nRxxc.csv pj -e -l 1
