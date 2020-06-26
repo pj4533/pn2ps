@@ -19,6 +19,15 @@ OPTIONS:
   -h, --help              Show help information.
 ```
 
+### How To Run
+
+1. Download the latest [release](https://github.com/pj4533/pn2ps/releases)
+2. Open a terminal window and find the folder you downloaded to
+3. Command to make app executable:  `chmod +x pn2ps`
+4. Command to run:  `./pn2ps <filename> <heroname> -m 0.01 > output_file.txt`
+
+You might need to give MacOS permission to run the app, also the 'game id' is the last portion of the PokerNow URL (not the whole URL).
+
 ### Helpful Commands
 
 `swift build` Builds app to the `.build` folder
@@ -30,11 +39,6 @@ OPTIONS:
 `swift run pn2ps` Runs app directly
 
 `swift package generate-xcodeproj` Generates an xcode project file
-
-
-### Known Issues
-
-See the Github issues section.  (PRs Accepted, lol)
 
 ### Example
 
