@@ -28,6 +28,7 @@ class Game: NSObject {
     var hands: [Hand] = []
     var currentHand: Hand?
 
+    var overflowLogDealerId: String?
     var legacyDateFormat: Bool = false
 
     init(filename: String) {
@@ -165,14 +166,42 @@ class Game: NSObject {
                 self.currentHand = hand
                 self.hands.append(hand)
             } else {
-                print(self.players)
-                if self.showErrors {
-                    print("ERROR: Dealer not found: \(dealerNameIdArray ?? [])")
-                }
+                // overflow log scenario
+                let hand = Hand()
+                self.overflowLogDealerId = dealerNameIdArray?.last
+                let handIdHex = String(self.MD5(string: "overflowlog-\(order ?? "error")").hexEncodedString().prefix(15))
+                var hexInt: UInt64 = 0
+                let scanner = Scanner(string: handIdHex)
+                scanner.scanHexInt64(&hexInt)
+                hand.id = hexInt
+                
+                hand.date = date
+                hand.useEmoji = self.useEmoji
+                self.currentHand = hand
+                self.hands.append(hand)
             }
         } else if msg?.starts(with: "-- ending hand ") ?? false {
             if debugHandAction {
                 print("----")
+            }
+        } else if msg?.starts(with: "Players stacks") ?? false {
+            let playersWithStacks = msg?.replacingOccurrences(of: "Players stacks: ", with: "").components(separatedBy: " | ")
+            
+            // This should only do stuff in an overflow log situation
+            for playerWithStack in playersWithStacks ?? [] {
+                let nameIdArray = playerWithStack.components(separatedBy: "\" ").first?.replacingOccurrences(of: "\"", with: "").components(separatedBy: " @ ")
+                let stackSize = playerWithStack.components(separatedBy: "\" (").last?.replacingOccurrences(of: ")", with: "")
+                if self.players.filter({$0.id == nameIdArray?.last}).count != 1 {
+                    let player = Player(admin: false, id: nameIdArray?.last, stack: Int(stackSize ?? "0") ?? 0, name: nameIdArray?.first)
+                    self.players.append(player)
+                }
+            }
+            
+            if self.currentHand?.players.count == 0 {
+                self.currentHand?.players = self.players.filter({$0.sitting == true})
+                if let dealer = self.players.filter({$0.id == self.overflowLogDealerId}).first {
+                    self.currentHand?.dealer = dealer
+                }
             }
         } else if msg?.starts(with: "Your hand is ") ?? false {
             self.currentHand?.hole = msg?.replacingOccurrences(of: "Your hand is ", with: "").components(separatedBy: ", ").map({
