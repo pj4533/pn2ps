@@ -110,144 +110,146 @@ class Hand {
                 foundHoleCards = true
             }
 
-            if line.contains("shows") || line.contains("calls") || line.contains("raises") || line.contains("checks") || line.contains("folds") || line.contains("wins") || line.contains("gained") {
-                if !foundHoleCards {
-                    print("*** HOLE CARDS ***")
-                    foundHoleCards = true                 
-                }
-                let nameIdArray = line.components(separatedBy: "\" ").first?.components(separatedBy: " @ ")
-                if let player = self.players.filter({$0.id == nameIdArray?.last}).first {
-                    if line.contains("raises") {
-                        
-                        if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
-                            self.seats[index].preFlopBet = true
-                        }
-
-                        let raiseSize = (Double(line.components(separatedBy: "with ").last ?? "0") ?? 0) * multiplier
-                        if isFirstAction {
-                            print("\(player.name ?? "unknown"): bets \(String(format: "$%.02f", raiseSize))")
-                            uncalledBet = raiseSize
-                            currentBet = raiseSize
-                            isFirstAction = false
-                        } else {
-                            print("\(player.name ?? "unknown"): raises \(String(format: "$%.02f", raiseSize - currentBet)) to \(String(format: "$%.02f", raiseSize))")
-                            uncalledBet = raiseSize - currentBet
-                            currentBet = raiseSize
-                        }
-                        previousAction[player.id ?? "error"] = raiseSize
+            if line.starts(with: "\"") {
+                if line.contains("shows") || line.contains("calls") || line.contains("raises") || line.contains("checks") || line.contains("folds") || line.contains("wins") || line.contains("gained") {
+                    if !foundHoleCards {
+                        print("*** HOLE CARDS ***")
+                        foundHoleCards = true
                     }
-
-                    if line.contains("calls") {
-                        if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
-                            self.seats[index].preFlopBet = true
-                        }
-
-                        let callSize = (Double(line.components(separatedBy: "with ").last ?? "0") ?? 0) * multiplier
-                        if isFirstAction {
-                            print("\(player.name ?? "unknown"): bets \(String(format: "$%.02f", callSize))")
-                            uncalledBet = callSize
-                            currentBet = callSize
-                            isFirstAction = false
-                        } else {
-                            let uncalledPortionOfBet = callSize - (previousAction[player.id ?? "error"] ?? 0.0)
-                            uncalledBet = 0
-                            print("\(player.name ?? "unknown"): calls \(String(format: "$%.02f", uncalledPortionOfBet))")
-                        }
-                        previousAction[player.id ?? "error"] = callSize
-                    }
-
-                    if line.contains("checks") {
-                        print("\(player.name ?? "unknown"): checks")
-                    }
-
-                    if line.contains("folds") {
-                        print("\(player.name ?? "unknown"): folds")
-                        if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
+                    let nameIdArray = line.components(separatedBy: "\" ").first?.components(separatedBy: " @ ")
+                    if let player = self.players.filter({$0.id == nameIdArray?.last}).first {
+                        if line.contains("raises") {
                             
-                            if (streetDescription == "before Flop") && !self.seats[index].preFlopBet {
-                                self.seats[index].summary = "\(player.name ?? "Unknown") folded \(streetDescription) (didn't bet)"
-                            } else {
-                                self.seats[index].summary = "\(player.name ?? "Unknown") folded \(streetDescription)"
+                            if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
+                                self.seats[index].preFlopBet = true
                             }
-                            
+
+                            let raiseSize = (Double(line.components(separatedBy: "with ").last ?? "0") ?? 0) * multiplier
+                            if isFirstAction {
+                                print("\(player.name ?? "unknown"): bets \(String(format: "$%.02f", raiseSize))")
+                                uncalledBet = raiseSize
+                                currentBet = raiseSize
+                                isFirstAction = false
+                            } else {
+                                print("\(player.name ?? "unknown"): raises \(String(format: "$%.02f", raiseSize - currentBet)) to \(String(format: "$%.02f", raiseSize))")
+                                uncalledBet = raiseSize - currentBet
+                                currentBet = raiseSize
+                            }
+                            previousAction[player.id ?? "error"] = raiseSize
                         }
-                    }
-                    
-                    if line.contains("shows") {
-                        let handComponents = line.components(separatedBy: "shows a ").last?.replacingOccurrences(of: ".", with: "").components(separatedBy: ", ")
-                        if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
+
+                        if line.contains("calls") {
+                            if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
+                                self.seats[index].preFlopBet = true
+                            }
+
+                            let callSize = (Double(line.components(separatedBy: "with ").last ?? "0") ?? 0) * multiplier
+                            if isFirstAction {
+                                print("\(player.name ?? "unknown"): bets \(String(format: "$%.02f", callSize))")
+                                uncalledBet = callSize
+                                currentBet = callSize
+                                isFirstAction = false
+                            } else {
+                                let uncalledPortionOfBet = callSize - (previousAction[player.id ?? "error"] ?? 0.0)
+                                uncalledBet = 0
+                                print("\(player.name ?? "unknown"): calls \(String(format: "$%.02f", uncalledPortionOfBet))")
+                            }
+                            previousAction[player.id ?? "error"] = callSize
+                        }
+
+                        if line.contains("checks") {
+                            print("\(player.name ?? "unknown"): checks")
+                        }
+
+                        if line.contains("folds") {
+                            print("\(player.name ?? "unknown"): folds")
+                            if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
+                                
+                                if (streetDescription == "before Flop") && !self.seats[index].preFlopBet {
+                                    self.seats[index].summary = "\(player.name ?? "Unknown") folded \(streetDescription) (didn't bet)"
+                                } else {
+                                    self.seats[index].summary = "\(player.name ?? "Unknown") folded \(streetDescription)"
+                                }
+                                
+                            }
+                        }
+                        
+                        if line.contains("shows") {
+                            let handComponents = line.components(separatedBy: "shows a ").last?.replacingOccurrences(of: ".", with: "").components(separatedBy: ", ")
+                            if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
+                                if self.useEmoji {
+                                    self.seats[index].showedHand = handComponents?.map({ (EmojiCard(rawValue: $0)?.emojiFlip.rawValue ?? "error") }).joined(separator: " ") ?? "error"
+                                } else {
+                                    self.seats[index].showedHand = handComponents?.joined(separator: " ") ?? "error"
+                                }
+                            }
+                        }
+                        
+                        if line.contains("wins") {
+                            var winPotSize = (Double(line.components(separatedBy: " wins ").last?.components(separatedBy: " with ").first ?? "0") ?? 0.0) * multiplier
+                            
+                            // remove missing smalls -- poker stars doesnt do this?
+                            winPotSize = winPotSize - (Double(self.smallBlindSize * self.missingSmallBlinds.count) * multiplier)
+
+                            let winDescription = line.components(separatedBy: " wins ").last?.components(separatedBy: " with ").last?.components(separatedBy: " (").first ?? "error"
+                            let winningHandComponents = line.components(separatedBy: "hand: ").last?.replacingOccurrences(of: ")", with: "").components(separatedBy: ", ")
+                            totalPotSize = winPotSize
+                            if !self.printedShowdown {
+                                print("*** SHOW DOWN ***")
+                                self.printedShowdown = true
+                            }
                             if self.useEmoji {
-                                self.seats[index].showedHand = handComponents?.map({ (EmojiCard(rawValue: $0)?.emojiFlip.rawValue ?? "error") }).joined(separator: " ") ?? "error"
+                                print("\(player.name ?? "Unknown"): shows [\(winningHandComponents?.map({ (EmojiCard(rawValue: $0)?.emojiFlip.rawValue ?? "error") }).joined(separator: " ") ?? "error")] (\(winDescription))")
                             } else {
-                                self.seats[index].showedHand = handComponents?.joined(separator: " ") ?? "error"
+                                print("\(player.name ?? "Unknown"): shows [\(winningHandComponents?.joined(separator: " ") ?? "error")] (\(winDescription))")
                             }
-                        }
-                    }
-                    
-                    if line.contains("wins") {
-                        var winPotSize = (Double(line.components(separatedBy: " wins ").last?.components(separatedBy: " with ").first ?? "0") ?? 0.0) * multiplier
-                        
-                        // remove missing smalls -- poker stars doesnt do this?
-                        winPotSize = winPotSize - (Double(self.smallBlindSize * self.missingSmallBlinds.count) * multiplier)
-
-                        let winDescription = line.components(separatedBy: " wins ").last?.components(separatedBy: " with ").last?.components(separatedBy: " (").first ?? "error"
-                        let winningHandComponents = line.components(separatedBy: "hand: ").last?.replacingOccurrences(of: ")", with: "").components(separatedBy: ", ")
-                        totalPotSize = winPotSize
-                        if !self.printedShowdown {
-                            print("*** SHOW DOWN ***")
-                            self.printedShowdown = true
-                        }
-                        if self.useEmoji {
-                            print("\(player.name ?? "Unknown"): shows [\(winningHandComponents?.map({ (EmojiCard(rawValue: $0)?.emojiFlip.rawValue ?? "error") }).joined(separator: " ") ?? "error")] (\(winDescription))")
-                        } else {
-                            print("\(player.name ?? "Unknown"): shows [\(winningHandComponents?.joined(separator: " ") ?? "error")] (\(winDescription))")
-                        }
-                        print("\(player.name ?? "Unknown") collected \(String(format: "$%.02f", winPotSize)) from pot")
-                        
-                        if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
-                            if self.useEmoji {
-                                self.seats[index].summary = "\(player.name ?? "Unknown") showed [\(winningHandComponents?.map({ (EmojiCard(rawValue: $0)?.emojiFlip.rawValue ?? "error") }).joined(separator: " ") ?? "error")] and won (\(String(format: "$%.02f", winPotSize))) with \(winDescription)"
-                            } else {
-                                self.seats[index].summary = "\(player.name ?? "Unknown") showed [\(winningHandComponents?.joined(separator: " ") ?? "error")] and won (\(String(format: "$%.02f", winPotSize))) with \(winDescription)"
-                            }
-                        }
-                    }
-                    
-                    if line.contains("gained") {
-                        var gainedPotSize = (Double(line.components(separatedBy: " gained ").last ?? "0") ?? 0) * multiplier
-                        
-                        // remove missing smalls -- poker stars doesnt do this?
-                        gainedPotSize = gainedPotSize - (Double(self.smallBlindSize * self.missingSmallBlinds.count) * multiplier)
-
-                        if uncalledBet > 0 {
-                            print("Uncalled bet (\(String(format: "$%.02f", uncalledBet))) returned to \(player.name ?? "Unknown")")
-                        }
-                        
-                        if self.flop == nil {
-                            var preFlopAction = 0.0
+                            print("\(player.name ?? "Unknown") collected \(String(format: "$%.02f", winPotSize)) from pot")
                             
-                            for player in self.players {
-                                preFlopAction = preFlopAction + (previousAction[player.id ?? "error"] ?? 0.0)
+                            if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
+                                if self.useEmoji {
+                                    self.seats[index].summary = "\(player.name ?? "Unknown") showed [\(winningHandComponents?.map({ (EmojiCard(rawValue: $0)?.emojiFlip.rawValue ?? "error") }).joined(separator: " ") ?? "error")] and won (\(String(format: "$%.02f", winPotSize))) with \(winDescription)"
+                                } else {
+                                    self.seats[index].summary = "\(player.name ?? "Unknown") showed [\(winningHandComponents?.joined(separator: " ") ?? "error")] and won (\(String(format: "$%.02f", winPotSize))) with \(winDescription)"
+                                }
+                            }
+                        }
+                        
+                        if line.contains("gained") {
+                            var gainedPotSize = (Double(line.components(separatedBy: " gained ").last ?? "0") ?? 0) * multiplier
+                            
+                            // remove missing smalls -- poker stars doesnt do this?
+                            gainedPotSize = gainedPotSize - (Double(self.smallBlindSize * self.missingSmallBlinds.count) * multiplier)
+
+                            if uncalledBet > 0 {
+                                print("Uncalled bet (\(String(format: "$%.02f", uncalledBet))) returned to \(player.name ?? "Unknown")")
                             }
                             
-                            // catching edge case of folding around preflop
-                            if preFlopAction == (Double(self.bigBlindSize + self.smallBlindSize) * multiplier) {
-                                gainedPotSize = Double(self.smallBlindSize) * multiplier
+                            if self.flop == nil {
+                                var preFlopAction = 0.0
+                                
+                                for player in self.players {
+                                    preFlopAction = preFlopAction + (previousAction[player.id ?? "error"] ?? 0.0)
+                                }
+                                
+                                // catching edge case of folding around preflop
+                                if preFlopAction == (Double(self.bigBlindSize + self.smallBlindSize) * multiplier) {
+                                    gainedPotSize = Double(self.smallBlindSize) * multiplier
+                                }
+                            }
+
+                            totalPotSize = gainedPotSize
+                            print("\(player.name ?? "Unknown") collected \(String(format: "$%.02f", gainedPotSize)) from pot")
+                            if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
+                                self.seats[index].summary = "\(player.name ?? "Unknown") collected (\(String(format: "$%.02f", gainedPotSize)))"
                             }
                         }
 
-                        totalPotSize = gainedPotSize
-                        print("\(player.name ?? "Unknown") collected \(String(format: "$%.02f", gainedPotSize)) from pot")
-                        if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
-                            self.seats[index].summary = "\(player.name ?? "Unknown") collected (\(String(format: "$%.02f", gainedPotSize)))"
-                        }
+
                     }
-
-
                 }
             }
             
-            if line.contains("flop") {
+            if line.starts(with: "flop:") {
                 print("*** FLOP *** [\(self.flop?.map({$0.rawValue}).joined(separator: " ") ?? "error")]")
                 isFirstAction = true
                 uncalledBet = 0
@@ -258,7 +260,7 @@ class Hand {
                 streetDescription = "on the Flop"
             }
 
-            if line.contains("turn") {
+            if line.starts(with: "turn:") {
                 print("*** TURN *** [\(self.flop?.map({$0.rawValue}).joined(separator: " ") ?? "error")] [\(self.turn?.rawValue ?? "error")]")
                 isFirstAction = true
                 uncalledBet = 0
@@ -269,7 +271,7 @@ class Hand {
                 streetDescription = "on the Turn"
             }
 
-            if line.contains("river") {
+            if line.starts(with: "river:") {
                 print("*** RIVER *** [\(self.flop?.map({$0.rawValue}).joined(separator: " ") ?? "error") \(self.turn?.rawValue ?? "error")] [\(self.river?.rawValue ?? "error")]")
                 isFirstAction = true
                 uncalledBet = 0
