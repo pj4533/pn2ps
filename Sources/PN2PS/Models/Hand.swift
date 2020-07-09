@@ -73,7 +73,7 @@ class Hand {
                     }
                 }
                 
-                print("Table '\(tableName)' 9-max Seat #\(dealerIndex) is the button")
+                print("Table '\(tableName)' 10-max Seat #\(dealerIndex) is the button")
             }
                         
             if line.contains("Players stacks:") {
