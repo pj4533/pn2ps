@@ -138,7 +138,7 @@ class Game: NSObject {
             if let dealer = self.players.filter({$0.id == dealerNameIdArray?.last}).first {
                 let hand = Hand()
 
-                let handIdHex = String(self.MD5(string: "\(dealer.id ?? "error")-\(order ?? "error")").hexEncodedString().prefix(15))                
+                let handIdHex = String(self.MD5(string: "\(dealer.id ?? "error")-\(date?.timeIntervalSince1970 ?? 0)").hexEncodedString().prefix(15))
                 var hexInt: UInt64 = 0
                 let scanner = Scanner(string: handIdHex)
                 scanner.scanHexInt64(&hexInt)
@@ -153,7 +153,7 @@ class Game: NSObject {
             } else if msg?.contains("dead button") ?? false {
                 let hand = Hand()
 
-                let handIdHex = String(self.MD5(string: "deadbutton-\(order ?? "error")").hexEncodedString().prefix(15))
+                let handIdHex = String(self.MD5(string: "deadbutton-\(date?.timeIntervalSince1970 ?? 0)").hexEncodedString().prefix(15))
                 var hexInt: UInt64 = 0
                 let scanner = Scanner(string: handIdHex)
                 scanner.scanHexInt64(&hexInt)
@@ -169,7 +169,7 @@ class Game: NSObject {
                 // overflow log scenario
                 let hand = Hand()
                 self.overflowLogDealerId = dealerNameIdArray?.last
-                let handIdHex = String(self.MD5(string: "overflowlog-\(order ?? "error")").hexEncodedString().prefix(15))
+                let handIdHex = String(self.MD5(string: "\(self.overflowLogDealerId ?? "error")-\(date?.timeIntervalSince1970 ?? 0)").hexEncodedString().prefix(15))
                 var hexInt: UInt64 = 0
                 let scanner = Scanner(string: handIdHex)
                 scanner.scanHexInt64(&hexInt)
