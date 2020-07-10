@@ -191,12 +191,17 @@ class Game: NSObject {
             for playerWithStack in playersWithStacks ?? [] {
                 let nameIdArray = playerWithStack.components(separatedBy: "\" ").first?.replacingOccurrences(of: "\"", with: "").components(separatedBy: " @ ")
                 let stackSize = playerWithStack.components(separatedBy: "\" (").last?.replacingOccurrences(of: ")", with: "")
-                if self.players.filter({$0.id == nameIdArray?.last}).count != 1 {
+                if self.players.filter({$0.id == nameIdArray?.last}).count == 0 {
                     let player = Player(admin: false, id: nameIdArray?.last, stack: Int(stackSize ?? "0") ?? 0, name: nameIdArray?.first)
                     self.players.append(player)
+                    
+                    self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
+                } else if self.players.filter({$0.id == nameIdArray?.last}).count == 1 {
+                    let player = self.players.filter({$0.id == nameIdArray?.last}).first
+                    self.currentHand?.seats.append(Seat(player: player, summary: "\(player?.name ?? "Unknown") didn't show and lost", preFlopBet: false))
                 }
             }
-            
+                        
             if self.currentHand?.players.count == 0 {
                 self.currentHand?.players = self.players.filter({$0.sitting == true})
                 if let dealer = self.players.filter({$0.id == self.overflowLogDealerId}).first {
@@ -274,9 +279,9 @@ class Game: NSObject {
                     self.currentHand?.uncalledBet = bigBlindSize
                     self.currentHand?.bigBlind.append(player)
 
-                    if (!(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false)) {
-                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
-                    }
+//                    if (!(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false)) {
+//                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
+//                    }
 
                     player.existingPotEquity = bigBlindSize
                     if debugHandAction {
@@ -294,9 +299,9 @@ class Game: NSObject {
                         player.existingPotEquity = smallBlindSize
                     }
                     
-                    if (!(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false)) {
-                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
-                    }
+//                    if (!(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false)) {
+//                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
+//                    }
 
                     self.currentHand?.pot = (self.currentHand?.pot ?? 0) + smallBlindSize
                     if debugHandAction {
@@ -309,9 +314,9 @@ class Game: NSObject {
                     self.currentHand?.pot = (self.currentHand?.pot ?? 0) + raiseSize - player.existingPotEquity
                     self.currentHand?.uncalledBet = raiseSize - (self.currentHand?.uncalledBet ?? 0)
 
-                    if (self.currentHand?.flop == nil) && !(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false) {
-                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
-                    }
+//                    if (self.currentHand?.flop == nil) && !(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false) {
+//                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
+//                    }
 
                     player.existingPotEquity = raiseSize
 
@@ -327,9 +332,9 @@ class Game: NSObject {
                         self.currentHand?.uncalledBet = callSize
                     }
 
-                    if (self.currentHand?.flop == nil) && !(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false) {
-                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
-                    }
+//                    if (self.currentHand?.flop == nil) && !(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false) {
+//                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
+//                    }
 
                     player.existingPotEquity = callSize
 
@@ -367,9 +372,9 @@ class Game: NSObject {
                 }
 
                 if msg?.contains("folds") ?? false {
-                    if (self.currentHand?.flop == nil) && !(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false) {
-                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
-                    }
+//                    if (self.currentHand?.flop == nil) && !(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false) {
+//                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
+//                    }
                     if debugHandAction {
                         print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") folds  (Pot: \(self.currentHand?.pot ?? 0))")
                     }

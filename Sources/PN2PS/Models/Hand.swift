@@ -61,16 +61,13 @@ class Hand {
                 print("PokerStars Hand #\(self.id): Hold'em No Limit (\(String(format: "$%.02f", Double(self.smallBlindSize) * multiplier))/\(String(format: "$%.02f", Double(self.bigBlindSize) * multiplier )) USD) - \(dateString) ET")
                 
                 var dealerIndex = 1
-                var currentIndex = self.seats.firstIndex(where: {$0.player?.name == heroName}) ?? 1
+                var currentIndex = 0
                 for seatIndex in 1...(self.seats.count) {
                     let seat = self.seats[currentIndex]
                     if self.dealer?.id == seat.player?.id {
                         dealerIndex = seatIndex
                     }
                     currentIndex = currentIndex + 1
-                    if currentIndex == self.seats.count {
-                        currentIndex = 0
-                    }
                 }
                 
                 print("Table '\(tableName)' 10-max Seat #\(dealerIndex) is the button")
@@ -85,15 +82,12 @@ class Hand {
                     stacks[nameIdArray?.last ?? ""] = Int(stackSize ?? "0")
                 }
                 
-                var currentIndex = self.seats.firstIndex(where: {$0.player?.name == heroName}) ?? 1
+                var currentIndex = 0
                 for seatIndex in 1...(self.seats.count) {
                     if let playerId = self.seats[currentIndex].player?.id {
                         let stackSize = "\(String(format: "$%.02f", Double(stacks[playerId] ?? 0) * multiplier))"
                         print("Seat \(seatIndex): \(self.seats[currentIndex].player?.name ?? "error") (\(stackSize) in chips)")
                         currentIndex = currentIndex + 1
-                        if currentIndex == self.seats.count {
-                            currentIndex = 0
-                        }
                     }
                 }
                 
@@ -293,7 +287,7 @@ class Hand {
                 if board.count > 0 {
                     print("Board: [\(board.map({$0.rawValue}).joined(separator: " "))]")
                 }
-                var currentIndex = self.seats.firstIndex(where: {$0.player?.name == heroName}) ?? 1
+                var currentIndex = 0
                 for seatIndex in 1...(self.seats.count) {
                     let seat = self.seats[currentIndex]
 
@@ -323,9 +317,6 @@ class Hand {
                     }
 
                     currentIndex = currentIndex + 1
-                    if currentIndex == self.seats.count {
-                        currentIndex = 0
-                    }
                 }
                 print("")
             }
