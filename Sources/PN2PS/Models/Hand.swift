@@ -30,6 +30,20 @@ class Hand {
 
     var printedShowdown: Bool = false
     
+    
+    // requirements as set:
+    //   - date
+    //   - players
+    //   - smallblind  size & id
+    //   - bigblinds   size & id
+    //   - lines
+    //   - dealer
+    //   - seats
+    //   - hole
+    //   - missingSmallBlinds
+    //   - flop
+    //   - turn
+    //   - river
     func printPokerStarsDescription(heroName: String, multiplier: Double, tableName: String) {
 
         let formatter = DateFormatter()
