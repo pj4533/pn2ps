@@ -119,14 +119,14 @@ class Hand {
             }
 
             if line.starts(with: "\"") {
-                if line.contains("bet") || line.contains("shows") || line.contains("call") || line.contains("raise") || line.contains("checks") || line.contains("folds") || line.contains("wins") || line.contains("gained") || line.contains("collected") {
+                if line.contains("bets") || line.contains("shows") || line.contains("calls") || line.contains("raises") || line.contains("checks") || line.contains("folds") || line.contains("wins") || line.contains("gained") || line.contains("collected") {
                     if !foundHoleCards {
                         print("*** HOLE CARDS ***")
                         foundHoleCards = true
                     }
                     let nameIdArray = line.components(separatedBy: "\" ").first?.components(separatedBy: " @ ")
                     if let player = self.players.filter({$0.id == nameIdArray?.last}).first {
-                        if line.contains("bet") {
+                        if line.contains("bets") {
                             if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
                                 self.seats[index].preFlopBet = true
                             }
@@ -139,7 +139,7 @@ class Hand {
                             previousAction[player.id ?? "error"] = betSize
                         }
                         
-                        if line.contains("raise") {
+                        if line.contains("raises") {
                             
                             if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
                                 self.seats[index].preFlopBet = true
@@ -157,12 +157,12 @@ class Hand {
                             previousAction[player.id ?? "error"] = raiseSize
                         }
 
-                        if line.contains("call") {
+                        if line.contains("calls") {
                             if let index = self.seats.firstIndex(where: { $0.player?.id == player.id }) {
                                 self.seats[index].preFlopBet = true
                             }
 
-                            let callAmount = line.replacingOccurrences(of: " and go all in", with: "").components(separatedBy: "call ").last ?? "0"
+                            let callAmount = line.replacingOccurrences(of: " and go all in", with: "").components(separatedBy: "calls ").last ?? "0"
                             let callSize = (Double(callAmount) ?? 0) * multiplier
                             if isFirstAction {
                                 print("\(player.name ?? "unknown"): bets \(String(format: "$%.02f", callSize))")

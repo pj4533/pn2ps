@@ -265,7 +265,7 @@ class Game: NSObject {
                     }
                 }
                 
-                if msg?.contains("raise") ?? false {
+                if msg?.contains("raises") ?? false {
                     let raiseSize = Int(msg?.components(separatedBy: "with ").last ?? "0") ?? 0
                     self.currentHand?.pot = (self.currentHand?.pot ?? 0) + raiseSize - player.existingPotEquity
                     self.currentHand?.uncalledBet = raiseSize - (self.currentHand?.uncalledBet ?? 0)
@@ -277,7 +277,7 @@ class Game: NSObject {
                     }
                 }
 
-                if msg?.contains("call") ?? false {
+                if msg?.contains("calls") ?? false {
                     let callSize = Int(msg?.components(separatedBy: "with ").last ?? "0") ?? 0
                     self.currentHand?.pot = (self.currentHand?.pot ?? 0) + callSize - player.existingPotEquity
                     if (self.currentHand?.uncalledBet ?? 0) == 0 {
