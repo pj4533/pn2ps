@@ -20,7 +20,6 @@ extension Data {
 
 class Game: NSObject {
 
-    var useEmoji: Bool = true
     var debugHandAction: Bool = false
     var showErrors: Bool = false
     
@@ -29,33 +28,27 @@ class Game: NSObject {
     var currentHand: Hand?
 
     var overflowLogDealerId: String?
-    var legacyDateFormat: Bool = false
 
     init(filename: String) {
         super.init()
         
         do {
             let csvFile: CSV = try CSV(url: URL(fileURLWithPath: filename))
-            var msgKey = "entry"
-            var orderKey = "order"
-            if csvFile.namedColumns.keys.contains("msg") {
-                self.legacyDateFormat = true
-                msgKey = "msg"
-                orderKey = "created_at"
-            }
-            
-            self.useEmoji = self.shouldUseEmoji(at: csvFile.namedRows.reversed().first?["at"])
-            
-            for row in csvFile.namedRows.reversed() {
-                if row[msgKey]?.starts(with: "The player ") ?? false {
-                    self.parsePlayerLine(msg: row[msgKey])
-                } else if row[msgKey]?.starts(with: "The admin ") ?? false {
-                    self.parseAdminLine(msg: row[msgKey])
-                } else {
-                    self.parseHandLine(msg: row[msgKey], at: row["at"], order: row[orderKey])
+            if self.isSupportedLog(at: csvFile.namedRows.reversed().first?["at"]) {
+                for row in csvFile.namedRows.reversed() {
+                    if row["entry"]?.starts(with: "The player ") ?? false {
+                        self.parsePlayerLine(msg: row["entry"])
+                    } else if row["entry"]?.starts(with: "The admin ") ?? false {
+                        self.parseAdminLine(msg: row["entry"])
+                    } else {
+                        self.parseHandLine(msg: row["entry"], at: row["at"], order: row["order"])
+                    }
+                    
                 }
-                
+            } else {
+                print("Unsupported log format: the PokerNow.club file format has changed since this log was generated")
             }
+            
         } catch let parseError as CSVParseError {
             print(parseError)
         } catch {
@@ -80,22 +73,15 @@ class Game: NSObject {
         return digestData
     }
 
-    private func shouldUseEmoji(at: String?) -> Bool {
+    private func isSupportedLog(at: String?) -> Bool {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        if self.legacyDateFormat {
-            if at?.contains(".") ?? false {
-                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS+00"
-            } else {
-                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss+00"
-            }
-        } else {
-            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-        }
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         let date = formatter.date(from: at ?? "") ?? Date()
-        let firstEmojiDate = Date(timeIntervalSince1970: 1590537600)
+        let oldestSupportedLog = Date(timeIntervalSince1970: 1594731595)
+//        let firstEmojiDate = Date(timeIntervalSince1970: 1590537600)
         
-        return date > firstEmojiDate
+        return date > oldestSupportedLog
     }
     
     private func resetPotEquity() {
@@ -111,15 +97,7 @@ class Game: NSObject {
     private func parseHandLine(msg: String?, at: String?, order: String? ) {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        if self.legacyDateFormat {
-            if at?.contains(".") ?? false {
-                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS+00"
-            } else {
-                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss+00"
-            }
-        } else {
-            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-        }
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         let date = formatter.date(from: at ?? "")
         
         if msg?.starts(with: "-- starting hand ") ?? false {
@@ -145,7 +123,6 @@ class Game: NSObject {
                 hand.id = hexInt
                 
                 hand.date = date
-                hand.useEmoji = self.useEmoji
                 hand.dealer = dealer
                 hand.players = self.players.filter({$0.sitting == true})
                 self.currentHand = hand
@@ -160,7 +137,6 @@ class Game: NSObject {
                 hand.id = hexInt
                 
                 hand.date = date
-                hand.useEmoji = self.useEmoji
                 hand.dealer = nil
                 hand.players = self.players.filter({$0.sitting == true})
                 self.currentHand = hand
@@ -176,7 +152,6 @@ class Game: NSObject {
                 hand.id = hexInt
                 
                 hand.date = date
-                hand.useEmoji = self.useEmoji
                 self.currentHand = hand
                 self.hands.append(hand)
             }
@@ -184,21 +159,26 @@ class Game: NSObject {
             if debugHandAction {
                 print("----")
             }
-        } else if msg?.starts(with: "Players stacks") ?? false {
-            let playersWithStacks = msg?.replacingOccurrences(of: "Players stacks: ", with: "").components(separatedBy: " | ")
+        } else if msg?.starts(with: "Player stacks") ?? false {
+            let playersWithStacks = msg?.replacingOccurrences(of: "Player stacks: ", with: "").components(separatedBy: " | ")
             
             // This should only do stuff in an overflow log situation
             for playerWithStack in playersWithStacks ?? [] {
-                let nameIdArray = playerWithStack.components(separatedBy: "\" ").first?.replacingOccurrences(of: "\"", with: "").components(separatedBy: " @ ")
+                let seatNumber = playerWithStack.components(separatedBy: " ").first
+                let playerWithStackNoSeat = playerWithStack.replacingOccurrences(of: "\(seatNumber ?? "") ", with: "")
+                let seatNumberInt = (Int(seatNumber?.replacingOccurrences(of: "#", with: "") ?? "0") ?? 0)
+                
+                let nameIdArray = playerWithStackNoSeat.components(separatedBy: "\" ").first?.replacingOccurrences(of: "\"", with: "").components(separatedBy: " @ ")
                 let stackSize = playerWithStack.components(separatedBy: "\" (").last?.replacingOccurrences(of: ")", with: "")
+                
                 if self.players.filter({$0.id == nameIdArray?.last}).count == 0 {
                     let player = Player(admin: false, id: nameIdArray?.last, stack: Int(stackSize ?? "0") ?? 0, name: nameIdArray?.first)
                     self.players.append(player)
                     
-                    self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
+                    self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false, number: seatNumberInt))
                 } else if self.players.filter({$0.id == nameIdArray?.last}).count == 1 {
                     let player = self.players.filter({$0.id == nameIdArray?.last}).first
-                    self.currentHand?.seats.append(Seat(player: player, summary: "\(player?.name ?? "Unknown") didn't show and lost", preFlopBet: false))
+                    self.currentHand?.seats.append(Seat(player: player, summary: "\(player?.name ?? "Unknown") didn't show and lost", preFlopBet: false, number: seatNumberInt))
                 }
             }
                         
@@ -210,11 +190,7 @@ class Game: NSObject {
             }
         } else if msg?.starts(with: "Your hand is ") ?? false {
             self.currentHand?.hole = msg?.replacingOccurrences(of: "Your hand is ", with: "").components(separatedBy: ", ").map({
-                if self.useEmoji {
-                    return EmojiCard(rawValue: $0)?.emojiFlip ?? .error
-                } else {
-                    return Card(rawValue: $0) ?? .error
-                }
+                return EmojiCard(rawValue: $0)?.emojiFlip ?? .error
             })
 
             if debugHandAction {
@@ -226,11 +202,7 @@ class Game: NSObject {
 
             let line = msg?.slice(from: "[", to: "]")
             self.currentHand?.flop = line?.replacingOccurrences(of: "flop: ", with: "").components(separatedBy: ", ").map({
-                if self.useEmoji {
-                    return EmojiCard(rawValue: $0)?.emojiFlip ?? .error
-                } else {
-                    return Card(rawValue: $0) ?? .error
-                }
+                return EmojiCard(rawValue: $0)?.emojiFlip ?? .error
             })
             
             if debugHandAction {
@@ -242,12 +214,8 @@ class Game: NSObject {
             self.currentHand?.uncalledBet = 0
 
             let line = msg?.slice(from: "[", to: "]")
-            if self.useEmoji {
-                self.currentHand?.turn = EmojiCard(rawValue: line?.replacingOccurrences(of: "turn: ", with: "") ?? "error")?.emojiFlip ?? .error
-            } else {
-                self.currentHand?.turn = Card(rawValue: line?.replacingOccurrences(of: "turn: ", with: "") ?? "error")
-            }
-            
+            self.currentHand?.turn = EmojiCard(rawValue: line?.replacingOccurrences(of: "turn: ", with: "") ?? "error")?.emojiFlip ?? .error
+
             if debugHandAction {
                 print("#\(self.currentHand?.id ?? 0) - turn: \(self.currentHand?.turn?.rawValue ?? "?")")
             }
@@ -257,11 +225,7 @@ class Game: NSObject {
             self.currentHand?.uncalledBet = 0
 
             let line = msg?.slice(from: "[", to: "]")
-            if self.useEmoji {
-                self.currentHand?.river = EmojiCard(rawValue: line?.replacingOccurrences(of: "river: ", with: "") ?? "error")?.emojiFlip ?? .error
-            } else {
-                self.currentHand?.river = Card(rawValue: line?.replacingOccurrences(of: "river: ", with: "") ?? "error")
-            }
+            self.currentHand?.river = EmojiCard(rawValue: line?.replacingOccurrences(of: "river: ", with: "") ?? "error")?.emojiFlip ?? .error
 
             if debugHandAction {
                 print("#\(self.currentHand?.id ?? 0) - river: \(self.currentHand?.river?.rawValue ?? "?")")
@@ -279,10 +243,6 @@ class Game: NSObject {
                     self.currentHand?.uncalledBet = bigBlindSize
                     self.currentHand?.bigBlind.append(player)
 
-//                    if (!(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false)) {
-//                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
-//                    }
-
                     player.existingPotEquity = bigBlindSize
                     if debugHandAction {
                         print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") posts big \(bigBlindSize)  (Pot: \(self.currentHand?.pot ?? 0))")
@@ -299,24 +259,16 @@ class Game: NSObject {
                         player.existingPotEquity = smallBlindSize
                     }
                     
-//                    if (!(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false)) {
-//                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
-//                    }
-
                     self.currentHand?.pot = (self.currentHand?.pot ?? 0) + smallBlindSize
                     if debugHandAction {
                         print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") posts small \(smallBlindSize)  (Pot: \(self.currentHand?.pot ?? 0))")
                     }
                 }
                 
-                if msg?.contains("raises") ?? false {
+                if msg?.contains("raise") ?? false {
                     let raiseSize = Int(msg?.components(separatedBy: "with ").last ?? "0") ?? 0
                     self.currentHand?.pot = (self.currentHand?.pot ?? 0) + raiseSize - player.existingPotEquity
                     self.currentHand?.uncalledBet = raiseSize - (self.currentHand?.uncalledBet ?? 0)
-
-//                    if (self.currentHand?.flop == nil) && !(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false) {
-//                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
-//                    }
 
                     player.existingPotEquity = raiseSize
 
@@ -325,43 +277,17 @@ class Game: NSObject {
                     }
                 }
 
-                if msg?.contains("calls") ?? false {
+                if msg?.contains("call") ?? false {
                     let callSize = Int(msg?.components(separatedBy: "with ").last ?? "0") ?? 0
                     self.currentHand?.pot = (self.currentHand?.pot ?? 0) + callSize - player.existingPotEquity
                     if (self.currentHand?.uncalledBet ?? 0) == 0 {
                         self.currentHand?.uncalledBet = callSize
                     }
 
-//                    if (self.currentHand?.flop == nil) && !(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false) {
-//                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
-//                    }
-
                     player.existingPotEquity = callSize
 
                     if debugHandAction {
                         print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") calls \(callSize)  (Pot: \(self.currentHand?.pot ?? 0))")
-                    }
-                }
-                
-                if msg?.contains("gained") ?? false {
-                    let gainedPotSize = Int(msg?.components(separatedBy: " gained ").last ?? "0") ?? 0
-                    
-                    if (gainedPotSize + (self.currentHand?.uncalledBet ?? 0)) != (self.currentHand?.pot) {
-                        if debugHandAction {
-                            print("ERROR:  error in gained pot size.   Expected: \(self.currentHand?.pot ?? 0)   Got: \((gainedPotSize + (self.currentHand?.uncalledBet ?? 0)))")
-                        }
-                    }
-
-                    if debugHandAction {
-                        print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") wins pot of \((gainedPotSize + (self.currentHand?.uncalledBet ?? 0)))  without showdown. (Pot: \(self.currentHand?.pot ?? 0))")
-                    }
-                }
-
-                if msg?.contains("wins") ?? false {
-                    let winPotSize = Int(msg?.components(separatedBy: " wins ").last?.components(separatedBy: " with ").first ?? "0") ?? 0
-                    
-                    if debugHandAction {
-                        print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") wins pot of \(winPotSize)  (Pot: \(self.currentHand?.pot ?? 0))")
                     }
                 }
                 
@@ -372,9 +298,6 @@ class Game: NSObject {
                 }
 
                 if msg?.contains("folds") ?? false {
-//                    if (self.currentHand?.flop == nil) && !(self.currentHand?.seats.contains(where: {$0.player?.id == player.id}) ?? false) {
-//                        self.currentHand?.seats.append(Seat(player: player, summary: "\(player.name ?? "Unknown") didn't show and lost", preFlopBet: false))
-//                    }
                     if debugHandAction {
                         print("#\(self.currentHand?.id ?? 0) - \(player.name ?? "Unknown Player") folds  (Pot: \(self.currentHand?.pot ?? 0))")
                     }

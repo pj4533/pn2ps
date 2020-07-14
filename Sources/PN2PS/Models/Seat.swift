@@ -14,4 +14,5 @@ struct Seat {
     var preFlopBet: Bool = false
     var showedHand: String?
     var stack: Int?
+    var number: Int = 0
 }
