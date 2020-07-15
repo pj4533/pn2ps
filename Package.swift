@@ -10,12 +10,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", from: "0.0.1"),
-        .package(url: "https://github.com/swiftcsv/SwiftCSV", from: "0.0.1")
+        .package(url: "https://github.com/swiftcsv/SwiftCSV", from: "0.0.1"),
+        .package(url: "https://github.com/pj4533/PokerNowKit", from: "0.0.3")
     ],
     targets: [
         .target(name: "PN2PS", dependencies: [
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
-            .product(name: "SwiftCSV", package: "SwiftCSV")
+            .product(name: "SwiftCSV", package: "SwiftCSV"),
+            .product(name: "PokerNowKit", package: "PokerNowKit")
         ])
     ]
 )

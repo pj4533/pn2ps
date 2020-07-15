@@ -1,5 +1,7 @@
 import Foundation
 import ArgumentParser
+import SwiftCSV
+import PokerNowKit
 
 struct PN2PS: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -23,19 +25,25 @@ struct PN2PS: ParsableCommand {
     private var tableName: String?
 
 	func run() {
-
-        let game = Game(filename: self.filename)
-        
-        if let limit = self.limit {
-            for hand in game.hands.prefix(limit) {
-                hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0, tableName: self.tableName ?? "DGen")
+        do {
+            let csvFile: CSV = try CSV(url: URL(fileURLWithPath: filename))
+            
+            let game = Game(rows: csvFile.namedRows)
+                    
+            if let limit = self.limit {
+                for hand in game.hands.prefix(limit) {
+                    hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0, tableName: self.tableName ?? "DGen")
+                }
+            } else {
+                for hand in game.hands {
+                    hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0, tableName: self.tableName ?? "DGen")
+                }
             }
-        } else {
-            for hand in game.hands {
-                hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0, tableName: self.tableName ?? "DGen")
-            }
+        } catch let parseError as CSVParseError {
+            print(parseError)
+        } catch {
+            print("Error loading file")
         }
-
 
     }
 }
