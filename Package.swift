@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", from: "0.0.1"),
         .package(url: "https://github.com/swiftcsv/SwiftCSV", from: "0.0.1"),
-        .package(url: "https://github.com/pj4533/PokerNowKit", from: "0.0.5")
+        .package(url: "https://github.com/pj4533/PokerNowKit", from: "0.0.6")
     ],
     targets: [
         .target(name: "PN2PS", dependencies: [
