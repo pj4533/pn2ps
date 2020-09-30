@@ -12,8 +12,8 @@ struct PN2PS: ParsableCommand {
     @Argument(help: "Your name in log")
     var heroname: String
 
-    @Option(help: "PokerNow Table ID to download")
-    var tableId: String?
+    @Option(name: .shortAndLong, default: nil, help: "PokerNow Table URL to download")
+    var tableUrl: String?
     
     @Option(help: "PokerNow log filename")
     var filename: String?
@@ -25,18 +25,18 @@ struct PN2PS: ParsableCommand {
     private var multiplier: Double?
 
     @Option(name: .shortAndLong, default: nil, help: "Table Name")
-    private var tableName: String?
+    private var name: String?
 
     func processCSV(_ csvFile: CSV) {
         let game = Game(rows: csvFile.namedRows)
                 
         if let limit = self.limit {
             for hand in game.hands.prefix(limit) {
-                hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0, tableName: self.tableName ?? "DGen")
+                hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0, tableName: self.name ?? "DGen")
             }
         } else {
             for hand in game.hands {
-                hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0, tableName: self.tableName ?? "DGen")
+                hand.printPokerStarsDescription(heroName: self.heroname, multiplier: self.multiplier ?? 1.0, tableName: self.name ?? "DGen")
             }
         }
     }
@@ -46,7 +46,7 @@ struct PN2PS: ParsableCommand {
             if let filename = self.filename {
                 let csvFile = try CSV(url: URL(fileURLWithPath: filename))
                 self.processCSV(csvFile)
-            } else if let tableId = self.tableId {
+            } else if let tableId = self.tableUrl?.replacingOccurrences(of: "https://www.pokernow.club/games/", with: "") {
                 if let skipToken = ProcessInfo.processInfo.environment["SKIP_TOKEN"] {
                     let semaphore = DispatchSemaphore(value: 1)
                     semaphore.wait()
